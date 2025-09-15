@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'theme.dart';
 import 'router.dart';
 
-class App extends StatelessWidget {
-  const App({super.key});
+class LivroReceitasApp extends StatelessWidget {
+  const LivroReceitasApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Livro de Receitas da Mãe',
-      debugShowCheckedModeBanner: false,
-      theme: buildTheme(),
-      onGenerateRoute: AppRouter.onGenerateRoute,
-      initialRoute: '/',
+    return ProviderScope(
+      child: MaterialApp.router(
+        title: 'Livro de Receitas da Mãe',
+        routerConfig: router,
+        theme: buildTheme(Brightness.light),
+        darkTheme: buildTheme(Brightness.dark),
+        themeMode: ThemeMode.system,
+      ),
     );
   }
 }

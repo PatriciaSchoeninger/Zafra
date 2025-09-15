@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 
-ThemeData buildTheme() {
-  final base = ThemeData.light(useMaterial3: true);
+ThemeData buildTheme(Brightness b) {
+  final base = ThemeData(
+    useMaterial3: true,
+    brightness: b,
+    colorSchemeSeed: Colors.purple,
+  );
   return base.copyWith(
-    colorScheme: base.colorScheme.copyWith(
-      primary: const Color(0xFFEB9800), // laranja que você curte 😉
-    ),
-    scaffoldBackgroundColor: const Color(0xFFFDFCF9),
-    textTheme: base.textTheme.apply(
-      bodyColor: const Color(0xFF222222),
-      displayColor: const Color(0xFF222222),
-    ),
+    textTheme: base.textTheme.apply(fontSizeFactor: 1.1), // fonte maior
   );
 }

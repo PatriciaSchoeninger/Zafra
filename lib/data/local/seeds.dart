@@ -1,7 +1,9 @@
 import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
-import '../models/ingredient_master.dart';
+
+import '../data_models/ingredient_master.dart';
 import 'hive_boxes.dart';
+
 
 const _u = Uuid();
 
@@ -11,38 +13,55 @@ Future<void> seedIfEmpty() async {
 
   final seeds = <IngredientMaster>[
     IngredientMaster(
-      id: _u.v4(), name: 'Farinha de trigo',
+      id: _u.v4(),
+      name: 'Farinha de trigo',
       synonyms: ['farinha', 'trigo comum'],
-      defaultUnit: 'g', densityGPerMl: 0.5 * 240 / 240, // ~120g/xic
+      defaultUnit: 'g',
+      densityGPerMl: 0.5 * 240 / 240, // ~120g/xic
       tags: ['básico'],
     ),
     IngredientMaster(
-      id: _u.v4(), name: 'Açúcar',
+      id: _u.v4(),
+      name: 'Açúcar',
       synonyms: ['açúcar refinado'],
       defaultUnit: 'g',
       tags: ['básico'],
     ),
     IngredientMaster(
-      id: _u.v4(), name: 'Leite',
-      defaultUnit: 'ml', densityGPerMl: 1.03, tags: ['líquido'],
+      id: _u.v4(),
+      name: 'Leite',
+      defaultUnit: 'ml',
+      densityGPerMl: 1.03,
+      tags: ['líquido'],
     ),
     IngredientMaster(
-      id: _u.v4(), name: 'Manteiga',
-      defaultUnit: 'g', tags: ['gordura'],
+      id: _u.v4(),
+      name: 'Manteiga',
+      defaultUnit: 'g',
+      tags: ['gordura'],
     ),
     IngredientMaster(
-      id: _u.v4(), name: 'Ovos', defaultUnit: 'un', tags: ['básico'],
+      id: _u.v4(),
+      name: 'Ovos',
+      defaultUnit: 'un',
+      tags: ['básico'],
     ),
     IngredientMaster(
-      id: _u.v4(), name: 'Fermento químico',
+      id: _u.v4(),
+      name: 'Fermento químico',
       synonyms: ['fermento de bolo', 'royal'],
       defaultUnit: 'g',
     ),
     IngredientMaster(
-      id: _u.v4(), name: 'Sal', defaultUnit: 'g',
+      id: _u.v4(),
+      name: 'Sal',
+      defaultUnit: 'g',
     ),
     IngredientMaster(
-      id: _u.v4(), name: 'Óleo', defaultUnit: 'ml', densityGPerMl: 0.92,
+      id: _u.v4(),
+      name: 'Óleo',
+      defaultUnit: 'ml',
+      densityGPerMl: 0.92,
     ),
   ];
 

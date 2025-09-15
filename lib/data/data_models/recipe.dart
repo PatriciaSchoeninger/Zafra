@@ -6,21 +6,50 @@ part 'recipe.g.dart';
 
 @HiveType(typeId: HiveIds.recipe)
 class Recipe extends HiveObject {
-  @HiveField(0) String id;                // uuid
-  @HiveField(1) String title;
-  @HiveField(2) List<String> photoPaths;  // paths locais
-  @HiveField(3) int servings;
-  @HiveField(4) int prepTimeMin;
-  @HiveField(5) int cookTimeMin;
-  @HiveField(6) String? category;
-  @HiveField(7) List<String> tags;
-  @HiveField(8) List<IngredientItem> ingredients;
-  @HiveField(9) List<String> steps;       // passos
-  @HiveField(10) bool favorite;
-  @HiveField(11) String? source;
-  @HiveField(12) String? notes;
-  @HiveField(13) DateTime createdAt;
-  @HiveField(14) DateTime updatedAt;
+  @HiveField(0)
+  String id;
+
+  @HiveField(1)
+  String title;
+
+  @HiveField(2)
+  List<String> photoPaths;
+
+  @HiveField(3)
+  int servings;
+
+  @HiveField(4)
+  int prepTimeMin;
+
+  @HiveField(5)
+  int cookTimeMin;
+
+  @HiveField(6)
+  String? category;
+
+  @HiveField(7)
+  List<String> tags;
+
+  @HiveField(8)
+  List<IngredientItem> ingredients;
+
+  @HiveField(9)
+  List<String> steps;
+
+  @HiveField(10)
+  bool favorite;
+
+  @HiveField(11)
+  String? source;
+
+  @HiveField(12)
+  String? notes;
+
+  @HiveField(13)
+  DateTime createdAt;
+
+  @HiveField(14)
+  DateTime updatedAt;
 
   Recipe({
     required this.id,

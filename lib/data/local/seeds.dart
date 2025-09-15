@@ -4,7 +4,6 @@ import 'package:uuid/uuid.dart';
 import '../data_models/ingredient_master.dart';
 import 'hive_boxes.dart';
 
-
 const _u = Uuid();
 
 Future<void> seedIfEmpty() async {

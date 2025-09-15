@@ -25,7 +25,7 @@ class RecipeAdapter extends TypeAdapter<Recipe> {
       cookTimeMin: fields[5] as int,
       category: fields[6] as String?,
       tags: (fields[7] as List).cast<String>(),
-      ingredients: (fields[8] as List).cast<InvalidType>(),
+      ingredients: (fields[8] as List).cast<IngredientItem>(),
       steps: (fields[9] as List).cast<String>(),
       favorite: fields[10] as bool,
       source: fields[11] as String?,

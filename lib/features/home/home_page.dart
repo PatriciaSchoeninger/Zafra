@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../data/repo/recipe_repo.dart';
-import '../../shared/widgets.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+
+import '../../shared/widgets.dart'; // ✅ providers centralizados
+import '../../data/data_models/recipe.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -15,9 +18,6 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final repo = ref.watch(recipeRepoProvider);
-    final items = repo.list(search: _query);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Livro de Receitas da Mãe'),
@@ -26,6 +26,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             onPressed: () async {
               final title = await _dialogNewRecipe(context);
               if (title != null && title.trim().isNotEmpty) {
+                final repo = ref.read(recipeRepoProvider);
                 final r = await repo.create(title.trim());
                 if (context.mounted) context.go('/edit?id=${r.id}');
               }
@@ -52,46 +53,82 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ),
       ),
-      body: items.isEmpty
-          ? const Center(child: Text('Sem receitas ainda. Toque + para criar.'))
-          : GridView.builder(
-              padding: const EdgeInsets.all(12),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12,
-                childAspectRatio: 3/4,
-              ),
-              itemCount: items.length,
-              itemBuilder: (c, i) {
-                final r = items[i];
-                return GestureDetector(
-                  onTap: () => context.go('/edit?id=${r.id}'),
-                  child: Card(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(
-                          child: r.photoPaths.isNotEmpty
-                              ? Image.asset( // placeholder; depois trocamos pra FileImage
-                                  'assets/placeholder.jpg', fit: BoxFit.cover)
-                              : Container(
-                                  color: Theme.of(context).colorScheme.surfaceVariant,
-                                  child: const Icon(Icons.photo, size: 48),
-                                ),
-                        ),
-                        ListTile(
-                          title: Text(r.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-                          subtitle: Text('${r.costPerServing.toStringAsFixed(2)} por porção'),
-                          trailing: Icon(
-                            r.favorite ? Icons.star : Icons.star_border,
-                            color: r.favorite ? Colors.amber : null,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+
+      // ✅ Agora observa a box do Hive e atualiza automaticamente
+      body: ValueListenableBuilder(
+        valueListenable: Hive.box<Recipe>('recipes').listenable(),
+        builder: (context, Box<Recipe> box, _) {
+          final all = box.values.toList();
+
+          final items = _query.isEmpty
+              ? all
+              : all.where((r) =>
+                  r.title.toLowerCase().contains(_query.toLowerCase()) ||
+                  r.ingredients.any((i) =>
+                      i.name.toLowerCase().contains(_query.toLowerCase()))
+                ).toList();
+
+          if (items.isEmpty) {
+            return const Center(
+                child: Text('Sem receitas ainda. Toque + para criar.'));
+          }
+
+          return GridView.builder(
+            padding: const EdgeInsets.all(12),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 3 / 4,
             ),
+            itemCount: items.length,
+            itemBuilder: (c, i) {
+              final r = items[i];
+              return GestureDetector(
+                onTap: () => context.go('/edit?id=${r.id}'),
+                child: Card(
+                  clipBehavior: Clip.antiAlias,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: r.photoPaths.isNotEmpty
+                            ? Image.file(
+                                File(r.photoPaths[r.coverIndex]),
+                                fit: BoxFit.cover,
+                              )
+                            : Container(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceVariant,
+                                child: const Icon(Icons.photo, size: 48),
+                              ),
+                      ),
+                      ListTile(
+                        title: Text(
+                          r.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text(
+                          'R\$ ${r.costPerServing.toStringAsFixed(2)} por porção',
+                        ),
+                        trailing: Icon(
+                          r.favorite ? Icons.star : Icons.star_border,
+                          color: r.favorite ? Colors.amber : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 
@@ -102,12 +139,19 @@ class _HomePageState extends ConsumerState<HomePage> {
       builder: (_) => AlertDialog(
         title: const Text('Nova receita'),
         content: TextField(
-          controller: controller, autofocus: true,
+          controller: controller,
+          autofocus: true,
           decoration: const InputDecoration(hintText: 'Ex.: Bolo de cenoura'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(context, controller.text), child: const Text('Criar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: const Text('Criar'),
+          ),
         ],
       ),
     );

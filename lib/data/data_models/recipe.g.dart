@@ -30,6 +30,7 @@ class RecipeAdapter extends TypeAdapter<Recipe> {
       favorite: fields[10] as bool,
       source: fields[11] as String?,
       notes: fields[12] as String?,
+      coverIndex: fields[15] as int,
       createdAt: fields[13] as DateTime?,
       updatedAt: fields[14] as DateTime?,
     );
@@ -38,7 +39,7 @@ class RecipeAdapter extends TypeAdapter<Recipe> {
   @override
   void write(BinaryWriter writer, Recipe obj) {
     writer
-      ..writeByte(15)
+      ..writeByte(16)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -68,7 +69,9 @@ class RecipeAdapter extends TypeAdapter<Recipe> {
       ..writeByte(13)
       ..write(obj.createdAt)
       ..writeByte(14)
-      ..write(obj.updatedAt);
+      ..write(obj.updatedAt)
+      ..writeByte(15)
+      ..write(obj.coverIndex);
   }
 
   @override

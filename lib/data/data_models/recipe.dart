@@ -51,6 +51,9 @@ class Recipe extends HiveObject {
   @HiveField(14)
   DateTime updatedAt;
 
+  @HiveField(15)
+  int coverIndex; // índice da foto usada como capa
+
   Recipe({
     required this.id,
     required this.title,
@@ -65,6 +68,7 @@ class Recipe extends HiveObject {
     this.favorite = false,
     this.source,
     this.notes,
+    this.coverIndex = 0,
     DateTime? createdAt,
     DateTime? updatedAt,
   })  : createdAt = createdAt ?? DateTime.now(),

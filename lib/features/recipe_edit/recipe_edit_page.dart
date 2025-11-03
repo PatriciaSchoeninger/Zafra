@@ -379,7 +379,7 @@ class _RecipeEditPageState extends ConsumerState<RecipeEditPage> {
                   itemBuilder: (context, i) {
                     return ListTile(
                       key: ValueKey('step_'+i.toString()),
-                      leading: CircleAvatar(child: Text('')),
+                      leading: CircleAvatar(child: Text('${i + 1}')),
                       title: Text(r!.steps[i]),
                       onTap: () async {
                         final edited = await _dialogEditStep(context, r!.steps[i]);
@@ -443,9 +443,8 @@ class _RecipeEditPageState extends ConsumerState<RecipeEditPage> {
           const SizedBox(height: 24),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Text(
-              'Custo total: R\$ ${r!.totalCost.toStringAsFixed(2)} • por porção: R\$ ${r!.costPerServing.toStringAsFixed(2)}',
-            ),
+            child: Text('Custo total: R\$ ${r!.totalCost.toStringAsFixed(2)} - por porcao: R\$ ${r!.costPerServing.toStringAsFixed(2)}'),
+
           ),
           const SizedBox(height: 40),
         ],
@@ -537,6 +536,33 @@ class _RecipeEditPageState extends ConsumerState<RecipeEditPage> {
     );
   }
 
+  Future<String?> _dialogEditStep(BuildContext ctx, String initial) async {
+    final controller = TextEditingController(text: initial);
+    return showDialog<String>(
+      context: ctx,
+      builder: (_) => AlertDialog(
+        title: const Text('Editar passo'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          minLines: 1,
+          maxLines: 5,
+          decoration: const InputDecoration(hintText: 'Descreva o passo...'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, controller.text),
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _showCoverPicker() async {
     if (r == null || r!.photoPaths.isEmpty) return;
     await showModalBottomSheet<void>(
@@ -605,7 +631,7 @@ class _RecipeEditPageState extends ConsumerState<RecipeEditPage> {
       },
     );
   }
-}
+
   Future<IngredientItem?> _dialogEditIngredient(
       BuildContext ctx, IngredientItem original) async {
     final name = TextEditingController(text: original.name);
@@ -670,5 +696,4 @@ class _RecipeEditPageState extends ConsumerState<RecipeEditPage> {
       ),
     );
   }
-
-
+}

@@ -137,15 +137,51 @@ class _RecipeEditPageState extends ConsumerState<RecipeEditPage> {
       body: ListView(
         padding: EdgeInsets.zero,
         children: [
-          // Capa grande
+          // Capa grande com ações (alterar/adc foto)
           AspectRatio(
             aspectRatio: 16 / 9,
-            child: r!.photoPaths.isNotEmpty
-                ? Image.file(File(r!.photoPaths.first), fit: BoxFit.cover)
-                : Container(
-                    color: Colors.grey.shade200,
-                    child: const Icon(Icons.photo, size: 80),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Builder(
+                  builder: (_) {
+                    if (r!.photoPaths.isNotEmpty) {
+                      final path = r!.photoPaths.first;
+                      final file = File(path);
+                      if (file.existsSync()) {
+                        return Image.file(file, fit: BoxFit.cover);
+                      }
+                    }
+                    return Container(
+                      color: Colors.grey.shade200,
+                      child: const Icon(Icons.photo, size: 80),
+                    );
+                  },
+                ),
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: 'Alterar capa',
+                        style: IconButton.styleFrom(backgroundColor: Colors.black45),
+                        icon: const Icon(Icons.photo_library, color: Colors.white),
+                        onPressed: () => _showCoverPicker(),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        tooltip: 'Adicionar foto',
+                        style: IconButton.styleFrom(backgroundColor: Colors.black45),
+                        icon: const Icon(Icons.add_a_photo, color: Colors.white),
+                        onPressed: _addPhoto,
+                      ),
+                    ],
                   ),
+                ),
+              ],
+            ),
           ),
 
           // Botão adicionar nova foto
@@ -328,56 +364,87 @@ class _RecipeEditPageState extends ConsumerState<RecipeEditPage> {
                 Text('Modo de Preparo',
                     style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
-                ...List.generate(
-                  r!.steps.length,
-                  (i) => ListTile(
-                    leading: CircleAvatar(child: Text('${i + 1}')),
-                    title: Text(r!.steps[i]),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () async {
-                        r!.steps.removeAt(i);
-                        await repo.save(r!);
-                        setState(() {});
+                                ReorderableListView.builder(
+                  key: const PageStorageKey('steps-list'),
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: r!.steps.length,
+                  onReorder: (oldIndex, newIndex) async {
+                    if (newIndex > oldIndex) newIndex -= 1;
+                    final item = r!.steps.removeAt(oldIndex);
+                    r!.steps.insert(newIndex, item);
+                    await repo.save(r!);
+                    setState(() {});
+                  },
+                  itemBuilder: (context, i) {
+                    return ListTile(
+                      key: ValueKey('step_'+i.toString()),
+                      leading: CircleAvatar(child: Text('${i + 1}')),
+                      title: Text(r!.steps[i]),
+                      onTap: () async {
+                        final edited = await _dialogEditStep(context, r!.steps[i]);
+                        if (edited != null && edited.trim().isNotEmpty) {
+                          r!.steps[i] = edited.trim();
+                          await repo.save(r!);
+                          setState(() {});
+                        }
                       },
-                    ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            tooltip: 'Editar',
+                            icon: const Icon(Icons.edit),
+                            onPressed: () async {
+                              final edited = await _dialogEditStep(context, r!.steps[i]);
+                              if (edited != null && edited.trim().isNotEmpty) {
+                                r!.steps[i] = edited.trim();
+                                await repo.save(r!);
+                                setState(() {});
+                              }
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () async {
+                              r!.steps.removeAt(i);
+                              await repo.save(r!);
+                              setState(() {});
+                            },
+                          ),
+                          const Icon(Icons.drag_handle),
+                        ],
+                      ),
+                    );
+                  },
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: stepCtrl,
+                  decoration: const InputDecoration(
+                    hintText: 'Novo passo...',
                   ),
                 ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: stepCtrl,
-                        decoration: const InputDecoration(
-                          hintText: 'Novo passo...',
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.add),
-                      onPressed: () async {
-                        if (stepCtrl.text.trim().isEmpty) return;
-                        r!.steps.add(stepCtrl.text.trim());
-                        stepCtrl.clear();
-                        await repo.save(r!);
-                        setState(() {});
-                      },
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add),
+                onPressed: () async {
+                  if (stepCtrl.text.trim().isEmpty) return;
+                  r!.steps.add(stepCtrl.text.trim());
+                  stepCtrl.clear();
+                  await repo.save(r!);
+                  setState(() {});
+                },
+              ),
+            ],
           ),
-
           const SizedBox(height: 24),
-
-          // Custo
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Text(
-              'Custo total: R\$ ${r!.totalCost.toStringAsFixed(2)} • '
-              'por porção: R\$ ${r!.costPerServing.toStringAsFixed(2)}',
-            ),
+            child: Text('Custo total: R\$ ${r!.totalCost.toStringAsFixed(2)} - por porcao: R\$ ${r!.costPerServing.toStringAsFixed(2)}'),
+
           ),
           const SizedBox(height: 40),
         ],
@@ -463,6 +530,167 @@ class _RecipeEditPageState extends ConsumerState<RecipeEditPage> {
               );
             },
             child: const Text('Adicionar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<String?> _dialogEditStep(BuildContext ctx, String initial) async {
+    final controller = TextEditingController(text: initial);
+    return showDialog<String>(
+      context: ctx,
+      builder: (_) => AlertDialog(
+        title: const Text('Editar passo'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          minLines: 1,
+          maxLines: 5,
+          decoration: const InputDecoration(hintText: 'Descreva o passo...'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, controller.text),
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showCoverPicker() async {
+    if (r == null || r!.photoPaths.isEmpty) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: false,
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Escolher capa', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 12),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemCount: r!.photoPaths.length,
+                  itemBuilder: (c, i) {
+                    final p = r!.photoPaths[i];
+                    final file = File(p);
+                    final exists = file.existsSync();
+                    return GestureDetector(
+                      onTap: () async {
+                        if (i != 0) {
+                          await _setAsCover(i);
+                        }
+                        if (!mounted) return;
+                        Navigator.pop(context);
+                      },
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          exists
+                              ? Image.file(file, fit: BoxFit.cover)
+                              : Container(
+                                  color: Colors.grey.shade300,
+                                  child: const Icon(Icons.photo, size: 40),
+                                ),
+                          if (i == 0)
+                            Container(
+                              color: Colors.black26,
+                              alignment: Alignment.bottomCenter,
+                              padding: const EdgeInsets.all(4),
+                              child: const Text(
+                                'Capa atual',
+                                style: TextStyle(color: Colors.white, fontSize: 12),
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<IngredientItem?> _dialogEditIngredient(
+      BuildContext ctx, IngredientItem original) async {
+    final name = TextEditingController(text: original.name);
+    final qty = TextEditingController(text: original.quantity.toString());
+    final unit = TextEditingController(text: original.unit);
+    final price = TextEditingController(
+        text: original.price != null ? original.price.toString() : '');
+
+    return showDialog<IngredientItem>(
+      context: ctx,
+      builder: (_) => AlertDialog(
+        title: const Text('Editar ingrediente'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: name,
+              decoration: const InputDecoration(labelText: 'Nome'),
+            ),
+            TextField(
+              controller: qty,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Quantidade'),
+            ),
+            TextField(
+              controller: unit,
+              decoration:
+                  const InputDecoration(labelText: 'Unidade (g/ml/xic/un...)'),
+            ),
+            TextField(
+              controller: price,
+              keyboardType: TextInputType.number,
+              decoration:
+                  const InputDecoration(labelText: 'Preço (opcional)'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final q = double.tryParse(qty.text.replaceAll(',', '.')) ?? 0;
+              final p = double.tryParse(price.text.replaceAll(',', '.'));
+              Navigator.pop(
+                ctx,
+                IngredientItem(
+                  masterId: original.masterId,
+                  name: name.text.trim(),
+                  quantity: q,
+                  unit: unit.text.trim(),
+                  price: p,
+                  haveAtHome: original.haveAtHome,
+                ),
+              );
+            },
+            child: const Text('Salvar'),
           ),
         ],
       ),

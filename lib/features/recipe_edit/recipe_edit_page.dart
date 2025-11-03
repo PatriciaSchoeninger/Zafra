@@ -20,20 +20,21 @@ class _RecipeEditPageState extends ConsumerState<RecipeEditPage> {
   final titleCtrl = TextEditingController();
   final stepCtrl = TextEditingController();
 
-  Set<String> _checkedIngredients = {};
+  final Set<String> _checkedIngredients = {};
 
   @override
   void initState() {
     super.initState();
     final repo = ref.read(recipeRepoProvider);
-    r = repo.list().firstWhere((x) => x.id == widget.recipeId);
+    r = widget.recipeId != null ? repo.getById(widget.recipeId!) : null;
 
     // ⚡ Garante que as listas sejam mutáveis
-    r!.photoPaths = List.from(r!.photoPaths);
+    if (r != null) { r!.photoPaths = List.from(r!.photoPaths);
     r!.steps = List.from(r!.steps);
     r!.ingredients = List.from(r!.ingredients);
 
     titleCtrl.text = r!.title;
+    }
   }
 
   Future<void> _addPhoto() async {
@@ -85,8 +86,28 @@ class _RecipeEditPageState extends ConsumerState<RecipeEditPage> {
   }
 
   @override
+  void dispose() {
+    titleCtrl.dispose();
+    stepCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final repo = ref.watch(recipeRepoProvider);
+
+    if (r == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Editar receita'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: const Center(child: Text('Receita não encontrada')),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -104,9 +125,10 @@ class _RecipeEditPageState extends ConsumerState<RecipeEditPage> {
           IconButton(
             tooltip: 'Salvar',
             onPressed: () async {
-              r!..title = titleCtrl.text.trim();
+              r!.title = titleCtrl.text.trim();
               await repo.save(r!);
-              if (mounted) Navigator.pop(context);
+              if (!context.mounted) return;
+              Navigator.pop(context);
             },
             icon: const Icon(Icons.check),
           ),

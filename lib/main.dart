@@ -7,5 +7,5 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Boxes.init();
   await seedIfEmpty();
-  runApp(const LivroReceitasApp());
+  runApp(const ZafraApp());
 }

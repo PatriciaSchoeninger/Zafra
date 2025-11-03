@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/home/home_page.dart';
@@ -11,9 +10,9 @@ final router = GoRouter(
       builder: (c, s) => const HomePage(),
       routes: [
         GoRoute(
-          path: 'edit',
+          path: 'edit/:id',
           builder: (c, s) => RecipeEditPage(
-            recipeId: s.uri.queryParameters['id'],
+            recipeId: s.pathParameters['id']!,
           ),
         ),
       ],

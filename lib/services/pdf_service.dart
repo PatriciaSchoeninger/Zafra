@@ -1,5 +1,5 @@
 // TODO: Implementar com package:pdf/printing
-import '../data/models/recipe.dart';
+import '../data/data_models/recipe.dart';
 
 class PdfService {
   Future<List<int>> buildRecipePdf(Recipe r) async {

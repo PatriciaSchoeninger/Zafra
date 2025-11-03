@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-
-import '../../shared/widgets.dart'; // ✅ providers centralizados
+import '../../shared/widgets.dart';
 import '../../data/data_models/recipe.dart';
+import '../../data/data_models/ingredient_item.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -20,7 +20,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Livro de Receitas da Mãe'),
+        title: const Text('Zafra'),
         actions: [
           IconButton(
             onPressed: () async {
@@ -28,7 +28,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               if (title != null && title.trim().isNotEmpty) {
                 final repo = ref.read(recipeRepoProvider);
                 final r = await repo.create(title.trim());
-                if (context.mounted) context.go('/edit?id=${r.id}');
+                if (context.mounted) context.go('/edit/${r.id}');
               }
             },
             icon: const Icon(Icons.add),
@@ -85,7 +85,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             itemBuilder: (c, i) {
               final r = items[i];
               return GestureDetector(
-                onTap: () => context.go('/edit?id=${r.id}'),
+                onTap: () => context.go('/edit/${r.id}'),
                 child: Card(
                   clipBehavior: Clip.antiAlias,
                   shape: RoundedRectangleBorder(
@@ -97,13 +97,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                       Expanded(
                         child: r.photoPaths.isNotEmpty
                             ? Image.file(
-                                File(r.photoPaths[r.coverIndex]),
+                                File(r.photoPaths.first),
                                 fit: BoxFit.cover,
                               )
                             : Container(
                                 color: Theme.of(context)
                                     .colorScheme
-                                    .surfaceVariant,
+                                    .surfaceContainerHighest,
                                 child: const Icon(Icons.photo, size: 48),
                               ),
                       ),
@@ -116,9 +116,78 @@ class _HomePageState extends ConsumerState<HomePage> {
                         subtitle: Text(
                           'R\$ ${r.costPerServing.toStringAsFixed(2)} por porção',
                         ),
-                        trailing: Icon(
-                          r.favorite ? Icons.star : Icons.star_border,
-                          color: r.favorite ? Colors.amber : null,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              r.favorite ? Icons.star : Icons.star_border,
+                              color: r.favorite ? Colors.amber : null,
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () async {
+                                final ok = await showDialog<bool>(
+                                  context: context,
+                                  builder: (_) => AlertDialog(
+                                    title: const Text('Excluir receita?'),
+                                    content: Text('Tem certeza que deseja excluir "${r.title}"?'),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+                                      FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Excluir')),
+                                    ],
+                                  ),
+                                );
+                                if (ok == true) {
+                                  // Snapshot para desfazer
+                                  final snapshot = Recipe(
+                                    id: r.id,
+                                    title: r.title,
+                                    photoPaths: List<String>.from(r.photoPaths),
+                                    servings: r.servings,
+                                    prepTimeMin: r.prepTimeMin,
+                                    cookTimeMin: r.cookTimeMin,
+                                    category: r.category,
+                                    tags: List<String>.from(r.tags),
+                                    ingredients: r.ingredients
+                                        .map((i) => IngredientItem(
+                                              masterId: i.masterId,
+                                              name: i.name,
+                                              quantity: i.quantity,
+                                              unit: i.unit,
+                                              price: i.price,
+                                              haveAtHome: i.haveAtHome,
+                                            ))
+                                        .toList(),
+                                    steps: List<String>.from(r.steps),
+                                    favorite: r.favorite,
+                                    source: r.source,
+                                    notes: r.notes,
+                                    createdAt: r.createdAt,
+                                    updatedAt: r.updatedAt,
+                                  );
+
+                                  final repo = ref.read(recipeRepoProvider);
+                                  await repo.delete(r);
+                                  setState(() {});
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: const Text('Receita excluída'),
+                                        action: SnackBarAction(
+                                          label: 'Desfazer',
+                                          onPressed: () async {
+                                            await repo.save(snapshot);
+                                            if (context.mounted) setState(() {});
+                                          },
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -157,3 +226,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 }
+
+
+
+

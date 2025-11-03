@@ -4,14 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'theme.dart';
 import 'router.dart';
 
-class LivroReceitasApp extends StatelessWidget {
-  const LivroReceitasApp({super.key});
+class ZafraApp extends StatelessWidget {
+  const ZafraApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return ProviderScope(
       child: MaterialApp.router(
-        title: 'Livro de Receitas da Mãe',
+        title: 'Zafra',
         routerConfig: router,
         theme: buildTheme(Brightness.light),
         darkTheme: buildTheme(Brightness.dark),
@@ -20,3 +20,4 @@ class LivroReceitasApp extends StatelessWidget {
     );
   }
 }
+
